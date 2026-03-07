@@ -5,9 +5,6 @@ from dataclasses import dataclass, field
 class ConsorcioParams:
     carta_credito: float
     num_months: int
-    taxa_admin: float
-    fundo_reserva: float
-    seguro: float
     parcela_pos_contemplacao: float
     parcela_pre_contemplacao: float | None = None
     rendimento_fundo: float = 1.0

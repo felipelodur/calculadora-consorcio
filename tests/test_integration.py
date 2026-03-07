@@ -22,9 +22,6 @@ def test_simple_scenario_hand_calculated():
     params = ConsorcioParams(
         carta_credito=100_000.0,
         num_months=12,
-        taxa_admin=0.15,
-        fundo_reserva=0.02,
-        seguro=0.01,
         parcela_pos_contemplacao=10_000.0,
     )
     bench = FixedRateBenchmark(annual_rate=0.10)
@@ -51,9 +48,6 @@ def test_meia_parcela_scenario():
     params = ConsorcioParams(
         carta_credito=100_000.0,
         num_months=12,
-        taxa_admin=0.15,
-        fundo_reserva=0.02,
-        seguro=0.01,
         parcela_pre_contemplacao=5_000.0,
         parcela_pos_contemplacao=10_000.0,
     )
@@ -70,9 +64,6 @@ def test_sweep_monotonic_consorcio_value():
     params = ConsorcioParams(
         carta_credito=100_000.0,
         num_months=24,
-        taxa_admin=0.15,
-        fundo_reserva=0.02,
-        seguro=0.01,
         parcela_pos_contemplacao=5_000.0,
     )
     bench = FixedRateBenchmark(annual_rate=0.12)

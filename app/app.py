@@ -36,15 +36,6 @@ parcela_cheia_cota = st.sidebar.number_input(
 )
 
 st.sidebar.subheader("Taxas")
-taxa_admin = st.sidebar.number_input(
-    "Taxa de administração (%)", value=18.0, step=0.5, format="%.1f"
-) / 100
-fundo_reserva = st.sidebar.number_input(
-    "Fundo de reserva (%)", value=3.7, step=0.1, format="%.1f"
-) / 100
-seguro = st.sidebar.number_input(
-    "Seguro (%)", value=0.0, step=0.1, format="%.1f"
-) / 100
 correcao_anual = st.sidebar.number_input(
     "Correção anual (%)", value=5.0, step=0.5, format="%.1f"
 ) / 100
@@ -67,9 +58,6 @@ contemplation_month = st.sidebar.slider(
 params = ConsorcioParams(
     carta_credito=carta_credito,
     num_months=num_months,
-    taxa_admin=taxa_admin,
-    fundo_reserva=fundo_reserva,
-    seguro=seguro,
     parcela_pre_contemplacao=meia_parcela_cota,
     parcela_pos_contemplacao=parcela_cheia_cota,
     rendimento_fundo=rendimento_fundo,

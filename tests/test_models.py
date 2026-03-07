@@ -5,9 +5,6 @@ def test_consorcio_params_defaults():
     params = ConsorcioParams(
         carta_credito=200_000.0,
         num_months=180,
-        taxa_admin=0.18,
-        fundo_reserva=0.02,
-        seguro=0.01,
         parcela_pos_contemplacao=1_500.0,
     )
     assert params.carta_credito == 200_000.0
@@ -21,9 +18,6 @@ def test_consorcio_params_meia_parcela():
     params = ConsorcioParams(
         carta_credito=200_000.0,
         num_months=180,
-        taxa_admin=0.18,
-        fundo_reserva=0.02,
-        seguro=0.01,
         parcela_pre_contemplacao=750.0,
         parcela_pos_contemplacao=1_500.0,
     )
@@ -35,9 +29,6 @@ def test_consorcio_params_get_installment():
     params = ConsorcioParams(
         carta_credito=200_000.0,
         num_months=180,
-        taxa_admin=0.18,
-        fundo_reserva=0.02,
-        seguro=0.01,
         parcela_pre_contemplacao=750.0,
         parcela_pos_contemplacao=1_500.0,
     )
@@ -49,9 +40,6 @@ def test_consorcio_params_no_meia_parcela():
     params = ConsorcioParams(
         carta_credito=200_000.0,
         num_months=180,
-        taxa_admin=0.18,
-        fundo_reserva=0.02,
-        seguro=0.01,
         parcela_pos_contemplacao=1_500.0,
     )
     assert params.get_installment(contemplated=False) == 1_500.0

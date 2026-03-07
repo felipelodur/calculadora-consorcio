@@ -8,9 +8,6 @@ def test_backtest_with_mock_data():
     params = ConsorcioParams(
         carta_credito=100_000.0,
         num_months=6,
-        taxa_admin=0.15,
-        fundo_reserva=0.02,
-        seguro=0.01,
         parcela_pos_contemplacao=2_000.0,
     )
 
