@@ -51,7 +51,18 @@ function updateFromSlider(month) {
     const be = d.metrics.break_even;
 
     renderMetrics(consVal, invVal, diff, pct, d.metrics.total_paid, be, month);
-    renderSweepChart(d.sweep, be, month, scale);
+
+    // Update only the selected-month line via relayout (faster, no flicker)
+    const shapes = [];
+    const annotations = [];
+    if (be) {
+        shapes.push({ type: 'line', x0: be, x1: be, y0: 0, y1: 1, yref: 'paper', line: { dash: 'dash', color: 'gray' } });
+        annotations.push({ x: be, y: 1, yref: 'paper', text: `Break-even: mês ${be}`, showarrow: false, yanchor: 'bottom', font: { color: 'gray' } });
+    }
+    shapes.push({ type: 'line', x0: month, x1: month, y0: 0, y1: 1, yref: 'paper', line: { dash: 'dot', color: '#f59e0b' } });
+    annotations.push({ x: month, y: 0, yref: 'paper', text: `Selecionado: mês ${month}`, showarrow: false, yanchor: 'top', font: { color: '#f59e0b' } });
+
+    Plotly.relayout('chart-sweep', { shapes, annotations });
 }
 
 async function runSimulation() {
@@ -257,7 +268,7 @@ function renderPortfolio(stats, numCotas) {
     ];
 
     Plotly.react('chart-portfolio', traces, {
-        xaxis: { title: 'Número de Cotas', type: 'log', color: '#9ca3af', gridcolor: '#1f2229' },
+        xaxis: { title: 'Número de Cotas', type: 'log', color: '#9ca3af', gridcolor: '#1f2229', range: [0, Math.log10(Math.max(...xs) * 1.1)] },
         yaxis: { title: 'Retorno (%)', ticksuffix: '%', color: '#9ca3af', gridcolor: '#1f2229' },
         shapes, annotations,
         height: 400, paper_bgcolor: '#0e1117', plot_bgcolor: '#0e1117',
