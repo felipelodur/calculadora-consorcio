@@ -292,8 +292,8 @@ for r in sweep.results:
         pct_d = (r.consorcio_final_value - r.investment_final_value) / r.investment_final_value * 100
     else:
         pct_d = 0.0
-    pct_diffs.append(pct_d)
-    abs_diffs.append((r.consorcio_final_value - r.investment_final_value) * scale)
+    pct_diffs.append(round(pct_d, 2))
+    abs_diffs.append(round((r.consorcio_final_value - r.investment_final_value) * scale, 2))
 
 pct_arr = np.array(pct_diffs)
 abs_arr = np.array(abs_diffs)
@@ -365,6 +365,102 @@ fig2.update_layout(
 )
 
 st.plotly_chart(fig2, use_container_width=True)
+
+# ── Portfolio diversification chart ──────────────────────────────────────────
+
+st.subheader("Efeito de Diversificação por Número de Cotas")
+st.markdown(
+    "Com múltiplas cotas contempladas em meses aleatórios, "
+    "o resultado do portfólio converge para a média (menor risco)."
+)
+
+rng = np.random.default_rng(42)
+n_simulations = 5_000
+cota_counts = sorted(set([1, 2, 3, 5, 10, 15, 20, 30, 50] + [num_cotas]))
+cota_counts = [c for c in cota_counts if c >= 1]
+
+portfolio_stats = []
+for n_cotas in cota_counts:
+    # Draw n_simulations portfolios of n_cotas random contemplation months
+    drawn_months = rng.integers(0, len(pct_arr), size=(n_simulations, n_cotas))
+    portfolio_returns = pct_arr[drawn_months].mean(axis=1)
+    portfolio_stats.append({
+        "cotas": n_cotas,
+        "p5": round(float(np.percentile(portfolio_returns, 5)), 2),
+        "p25": round(float(np.percentile(portfolio_returns, 25)), 2),
+        "p50": round(float(np.percentile(portfolio_returns, 50)), 2),
+        "p75": round(float(np.percentile(portfolio_returns, 75)), 2),
+        "p95": round(float(np.percentile(portfolio_returns, 95)), 2),
+    })
+
+fig_div = go.Figure()
+
+xs = [s["cotas"] for s in portfolio_stats]
+
+# P95 line (top of outer band)
+fig_div.add_trace(go.Scatter(
+    x=xs, y=[s["p95"] for s in portfolio_stats],
+    name="P95", line=dict(color="rgba(37, 99, 235, 0.3)", width=0),
+    mode="lines",
+    hovertemplate="P95: %{y:+.2f}%<extra></extra>",
+))
+
+# P5 line (bottom of outer band) — fill to P95
+fig_div.add_trace(go.Scatter(
+    x=xs, y=[s["p5"] for s in portfolio_stats],
+    name="P5–P95", line=dict(color="rgba(37, 99, 235, 0.3)", width=0),
+    mode="lines",
+    fill="tonexty", fillcolor="rgba(37, 99, 235, 0.1)",
+    hovertemplate="P5: %{y:+.2f}%<extra></extra>",
+))
+
+# P75 line (top of inner band)
+fig_div.add_trace(go.Scatter(
+    x=xs, y=[s["p75"] for s in portfolio_stats],
+    name="P75", line=dict(color="rgba(37, 99, 235, 0.5)", width=0),
+    mode="lines",
+    hovertemplate="P75: %{y:+.2f}%<extra></extra>",
+))
+
+# P25 line (bottom of inner band) — fill to P75
+fig_div.add_trace(go.Scatter(
+    x=xs, y=[s["p25"] for s in portfolio_stats],
+    name="P25–P75", line=dict(color="rgba(37, 99, 235, 0.5)", width=0),
+    mode="lines",
+    fill="tonexty", fillcolor="rgba(37, 99, 235, 0.25)",
+    hovertemplate="P25: %{y:+.2f}%<extra></extra>",
+))
+
+# Median line
+fig_div.add_trace(go.Scatter(
+    x=xs,
+    y=[s["p50"] for s in portfolio_stats],
+    name="Mediana",
+    line=dict(color="#2563eb", width=2),
+    hovertemplate="Mediana: %{y:+.2f}%<extra></extra>",
+))
+
+# Zero line
+fig_div.add_hline(y=0, line_color="white", line_width=1)
+
+# Highlight user's chosen number of cotas
+fig_div.add_vline(
+    x=num_cotas, line_dash="dot", line_color="#f59e0b",
+    annotation_text=f"Suas cotas: {num_cotas}",
+    annotation_position="top left",
+)
+
+fig_div.update_layout(
+    xaxis_title="Número de Cotas",
+    xaxis_type="log",
+    yaxis_title="Retorno Consórcio vs Investimento (%)",
+    yaxis_ticksuffix="%",
+    height=400,
+    margin=dict(l=20, r=20, t=20, b=20),
+    legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+)
+
+st.plotly_chart(fig_div, use_container_width=True)
 
 # ── Historical CDI chart ─────────────────────────────────────────────────────
 
