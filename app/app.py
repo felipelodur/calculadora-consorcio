@@ -232,10 +232,17 @@ st.markdown(
     f"(**{num_months} meses**, **{num_cotas} cotas**):"
 )
 
-sc1, sc2, sc3 = st.columns(3)
-sc1.metric("Percentil 25%", f"{p25:+.1f}%", delta=f"R$ {p25_abs:+,.0f}")
-sc2.metric("Mediana (50%)", f"{p50:+.1f}%", delta=f"R$ {p50_abs:+,.0f}")
-sc3.metric("Percentil 75%", f"{p75:+.1f}%", delta=f"R$ {p75_abs:+,.0f}")
+p0 = float(pct_arr.min())
+p100 = float(pct_arr.max())
+p0_abs = float(abs_arr.min())
+p100_abs = float(abs_arr.max())
+
+sc1, sc2, sc3, sc4, sc5 = st.columns(5)
+sc1.metric("Pior cenário", f"{p0:+.1f}%", delta=f"R$ {p0_abs:+,.0f}")
+sc2.metric("Percentil 25%", f"{p25:+.1f}%", delta=f"R$ {p25_abs:+,.0f}")
+sc3.metric("Mediana (50%)", f"{p50:+.1f}%", delta=f"R$ {p50_abs:+,.0f}")
+sc4.metric("Percentil 75%", f"{p75:+.1f}%", delta=f"R$ {p75_abs:+,.0f}")
+sc5.metric("Melhor cenário", f"{p100:+.1f}%", delta=f"R$ {p100_abs:+,.0f}")
 
 # Bar chart: % return across all months, colored by positive/negative
 colors = ["#2563eb" if p >= 0 else "#dc2626" for p in pct_diffs]
