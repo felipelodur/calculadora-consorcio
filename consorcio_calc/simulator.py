@@ -7,19 +7,23 @@ def simulate(
     params: ConsorcioParams,
     contemplation_month: int,
     benchmark: Benchmark,
+    fund_benchmark: Benchmark | None = None,
 ) -> SimulationResult:
     """Simulate a consorcio vs. investment for a fixed contemplation month.
 
     Args:
         params: Consorcio plan parameters.
         contemplation_month: Month when contemplation occurs (1-indexed).
-        benchmark: Benchmark for investment returns and fund yield.
+        benchmark: Benchmark for investment returns (and fund yield if fund_benchmark is None).
+        fund_benchmark: Optional separate benchmark for fund yield post-contemplation.
+            If None, uses benchmark for both.
 
     Returns:
         SimulationResult with all computed values.
     """
     n = params.num_months
     c = contemplation_month
+    fb = fund_benchmark or benchmark
 
     # Step 1: Build cash flow schedule
     cashflows = []
@@ -46,7 +50,7 @@ def simulate(
     # At month C you receive the carta. From C+1 to N it compounds.
     consorcio_value = carta_at_contemplation
     for month_idx in range(c, n):  # months after contemplation (0-indexed: c to n-1)
-        monthly_rate = benchmark.get_monthly_rate(month_idx)
+        monthly_rate = fb.get_monthly_rate(month_idx)
         fund_rate = monthly_rate * params.rendimento_fundo
         consorcio_value *= (1 + fund_rate)
 

@@ -3,14 +3,18 @@ from consorcio_calc.benchmarks import Benchmark
 from consorcio_calc.simulator import simulate
 
 
-def run_sweep(params: ConsorcioParams, benchmark: Benchmark) -> SweepResult:
+def run_sweep(
+    params: ConsorcioParams,
+    benchmark: Benchmark,
+    fund_benchmark: Benchmark | None = None,
+) -> SweepResult:
     """Run simulation for every possible contemplation month.
 
     Returns a SweepResult with results for each month and the break-even month.
     """
     results = []
     for month in range(1, params.num_months + 1):
-        result = simulate(params, contemplation_month=month, benchmark=benchmark)
+        result = simulate(params, contemplation_month=month, benchmark=benchmark, fund_benchmark=fund_benchmark)
         results.append(result)
 
     # Break-even: latest month where consorcio >= investment

@@ -49,15 +49,30 @@ rendimento_fundo = st.sidebar.number_input(
 ) / 100
 
 st.sidebar.header("Benchmark de Investimento")
-benchmark_mode = st.sidebar.radio(
-    "Modo", ["Taxa Fixa", "CDI Histórico"], horizontal=True
+invest_mode = st.sidebar.radio(
+    "Investimento", ["Taxa Fixa", "CDI Histórico"], horizontal=True, key="invest_mode"
 )
 
-if benchmark_mode == "Taxa Fixa":
+if invest_mode == "Taxa Fixa":
     taxa_anual = st.sidebar.number_input(
-        "Taxa anual do benchmark (%)", value=13.25, step=0.25, format="%.2f"
+        "Taxa anual do investimento (%)", value=13.25, step=0.25, format="%.2f"
     ) / 100
-else:
+
+st.sidebar.header("Rendimento do Fundo")
+fund_mode = st.sidebar.radio(
+    "Fundo pós-contemplação", ["Mesmo do investimento", "CDI Histórico", "Taxa Fixa"],
+    horizontal=False, key="fund_mode"
+)
+
+if fund_mode == "Taxa Fixa":
+    fund_taxa = st.sidebar.number_input(
+        "Taxa anual do fundo (%)", value=13.25, step=0.25, format="%.2f"
+    ) / 100
+
+# CDI date picker — show if either mode uses CDI Histórico
+needs_cdi = invest_mode == "CDI Histórico" or fund_mode == "CDI Histórico"
+if needs_cdi:
+    st.sidebar.header("Dados Históricos CDI")
     start_date = st.sidebar.date_input(
         "Data de início do consórcio",
         value=datetime(2006, 1, 1),
@@ -81,10 +96,9 @@ params = ConsorcioParams(
     reajuste_anual=correcao_anual if correcao_anual > 0 else None,
 )
 
-if benchmark_mode == "Taxa Fixa":
-    benchmark = FixedRateBenchmark(annual_rate=taxa_anual)
-else:
-    # Fetch historical CDI data from BCB
+# Fetch CDI data once if needed by either benchmark
+cdi_benchmark = None
+if needs_cdi:
     provider = BCBDataProvider()
     start_str = start_date.strftime("%d/%m/%Y")
     end_dt = start_date + timedelta(days=num_months * 31)
@@ -100,25 +114,37 @@ else:
             st.warning(
                 f"Dados históricos insuficientes: encontrados {len(monthly_rates)} meses, "
                 f"necessários {num_months}. Usando os {len(monthly_rates)} meses disponíveis "
-                f"e taxa fixa para o restante."
+                f"e taxa média para o restante."
             )
-            # Fill remaining months with the average of available data
             avg_rate = sum(monthly_rates) / len(monthly_rates) if monthly_rates else 0
             monthly_rates.extend([avg_rate] * (num_months - len(monthly_rates)))
 
-        benchmark = HistoricalBenchmark(monthly_rates=monthly_rates[:num_months])
+        cdi_benchmark = HistoricalBenchmark(monthly_rates=monthly_rates[:num_months])
 
-        # Show actual annualized CDI rate
         avg_monthly = sum(monthly_rates[:num_months]) / len(monthly_rates[:num_months])
         annual_equiv = (1 + avg_monthly) ** 12 - 1
         st.info(f"CDI histórico: taxa média mensal {avg_monthly * 100:.3f}% → {annual_equiv * 100:.2f}% a.a.")
 
     except Exception as e:
         st.error(f"Erro ao buscar dados do BCB: {e}. Usando taxa fixa de 13.25% como fallback.")
-        benchmark = FixedRateBenchmark(annual_rate=0.1325)
+        cdi_benchmark = FixedRateBenchmark(annual_rate=0.1325)
 
-sweep = run_sweep(params, benchmark)
-selected = simulate(params, contemplation_month=contemplation_month, benchmark=benchmark)
+# Build investment benchmark
+if invest_mode == "Taxa Fixa":
+    benchmark = FixedRateBenchmark(annual_rate=taxa_anual)
+else:
+    benchmark = cdi_benchmark
+
+# Build fund benchmark (None = same as investment benchmark)
+fund_benchmark = None
+if fund_mode == "CDI Histórico":
+    fund_benchmark = cdi_benchmark
+elif fund_mode == "Taxa Fixa":
+    fund_benchmark = FixedRateBenchmark(annual_rate=fund_taxa)
+# "Mesmo do investimento" → None → simulator uses benchmark for both
+
+sweep = run_sweep(params, benchmark, fund_benchmark=fund_benchmark)
+selected = simulate(params, contemplation_month=contemplation_month, benchmark=benchmark, fund_benchmark=fund_benchmark)
 
 # ── Metrics cards ────────────────────────────────────────────────────────────
 
