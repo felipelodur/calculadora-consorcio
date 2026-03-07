@@ -27,13 +27,6 @@ class BCBDataProvider:
     def _cache_path(self, series: BCBSeries) -> str:
         return os.path.join(self.cache_dir, f"{series.name.lower()}.csv")
 
-    def _cache_is_valid(self, series: BCBSeries, max_age_seconds: int = 86400) -> bool:
-        path = self._cache_path(series)
-        if not os.path.exists(path):
-            return False
-        age = time.time() - os.path.getmtime(path)
-        return age < max_age_seconds
-
     def _save_cache(self, series: BCBSeries, data: list[dict]) -> None:
         os.makedirs(self.cache_dir, exist_ok=True)
         path = self._cache_path(series)
@@ -45,12 +38,30 @@ class BCBDataProvider:
 
     def _load_cache(self, series: BCBSeries) -> list[dict]:
         path = self._cache_path(series)
+        if not os.path.exists(path):
+            return []
         data = []
         with open(path, "r") as f:
             reader = csv.DictReader(f)
             for row in reader:
                 data.append({"date": row["date"], "value": float(row["value"])})
         return data
+
+    def _parse_date(self, date_str: str):
+        """Parse dd/mm/yyyy to (year, month, day) tuple for comparison."""
+        parts = date_str.split("/")
+        return (int(parts[2]), int(parts[1]), int(parts[0]))
+
+    def _cache_covers_range(self, series: BCBSeries, start_date: str, end_date: str) -> bool:
+        """Check if cached data covers the requested date range."""
+        cached = self._load_cache(series)
+        if not cached:
+            return False
+        cached_start = self._parse_date(cached[0]["date"])
+        cached_end = self._parse_date(cached[-1]["date"])
+        req_start = self._parse_date(start_date)
+        req_end = self._parse_date(end_date)
+        return cached_start <= req_start and cached_end >= req_end
 
     def _fetch_chunk(self, series: BCBSeries, start_date: str, end_date: str) -> list[dict]:
         """Fetch a single chunk from BCB API."""
@@ -88,9 +99,16 @@ class BCBDataProvider:
         return all_data
 
     def get(self, series: BCBSeries, start_date: str, end_date: str) -> list[dict]:
-        """Get series data, using cache if valid, otherwise fetching."""
-        if self._cache_is_valid(series):
-            return self._load_cache(series)
+        """Get series data, using cache if it covers the range, otherwise fetching."""
+        if self._cache_covers_range(series, start_date, end_date):
+            cached = self._load_cache(series)
+            # Filter to requested range
+            req_start = self._parse_date(start_date)
+            req_end = self._parse_date(end_date)
+            return [
+                d for d in cached
+                if req_start <= self._parse_date(d["date"]) <= req_end
+            ]
         return self.fetch(series, start_date, end_date)
 
     def aggregate_to_monthly(self, daily_data: list[dict]) -> list[dict]:

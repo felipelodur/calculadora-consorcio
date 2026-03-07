@@ -96,19 +96,24 @@ params = ConsorcioParams(
     reajuste_anual=correcao_anual if correcao_anual > 0 else None,
 )
 
+@st.cache_data(show_spinner="Buscando dados históricos do CDI no Banco Central...")
+def fetch_cdi_monthly(start_str: str, end_str: str) -> list[dict]:
+    """Fetch and aggregate CDI data. Cached by Streamlit across reruns."""
+    provider = BCBDataProvider()
+    raw_data = provider.get(BCBSeries.CDI, start_str, end_str)
+    return provider.aggregate_to_monthly(raw_data)
+
+
 # Fetch CDI data once if needed by either benchmark
 cdi_benchmark = None
 if needs_cdi:
-    provider = BCBDataProvider()
     start_str = start_date.strftime("%d/%m/%Y")
     end_dt = start_date + timedelta(days=num_months * 31)
     end_str = end_dt.strftime("%d/%m/%Y")
 
     try:
-        with st.spinner("Buscando dados históricos do CDI no Banco Central..."):
-            raw_data = provider.fetch(BCBSeries.CDI, start_str, end_str)
-            monthly_data = provider.aggregate_to_monthly(raw_data)
-            monthly_rates = [m["value"] for m in monthly_data]
+        monthly_data = fetch_cdi_monthly(start_str, end_str)
+        monthly_rates = [m["value"] for m in monthly_data]
 
         if len(monthly_rates) < num_months:
             st.warning(
