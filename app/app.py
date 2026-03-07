@@ -101,6 +101,19 @@ col3.metric(
     delta_color="off",
 )
 
+col4, col5, col6 = st.columns(3)
+col4.metric("Total Pago", f"R$ {selected.total_paid * scale:,.0f}")
+col5.metric(
+    "Diferença Absoluta",
+    f"R$ {abs(opp_cost):,.0f}",
+    delta=f"{'a favor do consórcio' if opp_cost <= 0 else 'a favor do investimento'}",
+    delta_color="inverse" if opp_cost <= 0 else "normal",
+)
+col6.metric(
+    "Break-Even",
+    f"Mês {be} ({be / 12:.1f} anos)" if be else "N/A",
+)
+
 # ── Sweep chart ──────────────────────────────────────────────────────────────
 
 st.subheader("Análise de Cenários por Mês de Contemplação")
