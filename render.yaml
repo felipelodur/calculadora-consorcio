@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: calculadora-consorcio
+    runtime: python
+    buildCommand: pip install -r requirements-flask.txt
+    startCommand: gunicorn app.flask_app:app --bind 0.0.0.0:$PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.13"
