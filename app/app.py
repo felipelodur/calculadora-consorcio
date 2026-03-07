@@ -138,22 +138,23 @@ fig.add_trace(go.Scatter(
     hovertemplate="Mês %{x}<br>R$ %{y:,.0f}<extra>Investimento</extra>",
 ))
 
-# Break-even and selected month lines — offset annotations when close together
-lines_overlap = be and abs(contemplation_month - be) < 15
-
+# Break-even line — annotation at top
 if be:
     fig.add_vline(
         x=be, line_dash="dash", line_color="gray",
         annotation_text=f"Break-even: mês {be}",
         annotation_position="top left",
-        annotation_yshift=20 if lines_overlap else 0,
     )
 
+# Selected month — annotation at bottom
 fig.add_vline(
     x=contemplation_month, line_dash="dot", line_color="#f59e0b",
-    annotation_text=f"Selecionado: mês {contemplation_month}",
-    annotation_position="top right",
-    annotation_yshift=-20 if lines_overlap else 0,
+    annotation=dict(
+        text=f"Selecionado: mês {contemplation_month}",
+        yref="paper", y=0, yanchor="bottom",
+        showarrow=False,
+        font=dict(color="#f59e0b"),
+    ),
 )
 
 fig.update_layout(
