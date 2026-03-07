@@ -87,7 +87,7 @@ st.subheader(f"Métricas — Contemplação no mês {contemplation_month} ({cont
 
 scale = num_cotas
 
-col1, col2, col3, col4, col5 = st.columns(5)
+col1, col2, col3, col4, col5, col6 = st.columns(6)
 col1.metric("Total Pago", f"R$ {selected.total_paid * scale:,.0f}")
 col2.metric("Valor Consórcio", f"R$ {selected.consorcio_final_value * scale:,.0f}")
 col3.metric("Valor Investimento", f"R$ {selected.investment_final_value * scale:,.0f}")
@@ -100,8 +100,16 @@ col4.metric(
     delta_color="normal" if opp_cost > 0 else "inverse",
 )
 
-be = sweep.break_even_month
+pct = (selected.consorcio_final_value - selected.investment_final_value) / selected.investment_final_value * 100 if selected.investment_final_value else 0
 col5.metric(
+    "Retorno vs Investimento",
+    f"{pct:+.1f}%",
+    delta=f"{'a mais' if pct >= 0 else 'a menos'} no consórcio",
+    delta_color="inverse" if pct >= 0 else "normal",
+)
+
+be = sweep.break_even_month
+col6.metric(
     "Break-Even",
     f"Mês {be} ({be / 12:.1f} anos)" if be else "N/A",
 )
@@ -130,19 +138,22 @@ fig.add_trace(go.Scatter(
     hovertemplate="Mês %{x}<br>R$ %{y:,.0f}<extra>Investimento</extra>",
 ))
 
-# Break-even line
+# Break-even and selected month lines — offset annotations when close together
+lines_overlap = be and abs(contemplation_month - be) < 15
+
 if be:
     fig.add_vline(
         x=be, line_dash="dash", line_color="gray",
         annotation_text=f"Break-even: mês {be}",
         annotation_position="top left",
+        annotation_yshift=20 if lines_overlap else 0,
     )
 
-# Selected month marker
 fig.add_vline(
     x=contemplation_month, line_dash="dot", line_color="#f59e0b",
     annotation_text=f"Selecionado: mês {contemplation_month}",
     annotation_position="top right",
+    annotation_yshift=-20 if lines_overlap else 0,
 )
 
 fig.update_layout(
@@ -170,27 +181,32 @@ rows = []
 for m in milestone_months:
     r = sweep.results[m - 1]
     winner = "Consórcio" if r.opportunity_cost <= 0 else "Investimento"
+    # % difference: positive = consórcio ahead, negative = investment ahead
+    if r.investment_final_value != 0:
+        pct_diff = (r.consorcio_final_value - r.investment_final_value) / r.investment_final_value * 100
+    else:
+        pct_diff = 0.0
     rows.append({
         "Mês": m,
         "Ano": f"{m / 12:.1f}",
         "Total Pago": f"R$ {r.total_paid * scale:,.0f}",
         "Valor Consórcio": f"R$ {r.consorcio_final_value * scale:,.0f}",
         "Valor Investimento": f"R$ {r.investment_final_value * scale:,.0f}",
-        "Custo de Oportunidade": f"R$ {r.opportunity_cost * scale:,.0f}",
+        "Diferença %": f"{pct_diff:+.1f}%",
         "Vencedor": winner,
     })
 
+be_idx = None
 if be:
-    be_idx = next(i for i, row in enumerate(rows) if row["Mês"] == be)
-    df = pd.DataFrame(rows)
-    st.dataframe(
-        df.style.apply(
-            lambda row: ["background-color: #fef3c7"] * len(row)
-            if row.name == be_idx else [""] * len(row),
-            axis=1,
-        ),
-        use_container_width=True,
-        hide_index=True,
-    )
-else:
-    st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+    be_idx = next((i for i, row in enumerate(rows) if row["Mês"] == be), None)
+
+df = pd.DataFrame(rows)
+st.dataframe(
+    df.style.apply(
+        lambda row: ["background-color: #1e3a5f; color: #ffffff"] * len(row)
+        if be_idx is not None and row.name == be_idx else [""] * len(row),
+        axis=1,
+    ),
+    use_container_width=True,
+    hide_index=True,
+)
