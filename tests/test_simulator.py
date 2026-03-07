@@ -96,3 +96,19 @@ def test_simulate_opportunity_cost():
         result.investment_final_value - result.consorcio_final_value,
         rel_tol=1e-9,
     )
+
+
+def test_simulate_npv_is_computed():
+    """NPV should be nonzero when rate > 0."""
+    params = _simple_params()
+    bench = FixedRateBenchmark(annual_rate=0.10)
+    result = simulate(params, contemplation_month=30, benchmark=bench)
+    assert result.npv != 0.0
+
+
+def test_simulate_cet_is_computed():
+    """CET should be a positive number (consorcio has a cost)."""
+    params = _simple_params()
+    bench = FixedRateBenchmark(annual_rate=0.10)
+    result = simulate(params, contemplation_month=30, benchmark=bench)
+    assert result.cet > 0

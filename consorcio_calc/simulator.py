@@ -1,5 +1,6 @@
 from consorcio_calc.models import ConsorcioParams, SimulationResult
 from consorcio_calc.benchmarks import Benchmark
+from consorcio_calc.metrics import compute_npv, compute_cet
 
 
 def simulate(
@@ -65,6 +66,14 @@ def simulate(
     net_cost = total_paid - carta_at_contemplation
     opportunity_cost = investment_value - consorcio_value
 
+    # Step 5: Build NPV cashflows and compute metrics
+    npv_cashflows = [-cf for cf in cashflows]
+    npv_cashflows[c - 1] += carta_at_contemplation
+    npv = compute_npv(npv_cashflows, benchmark)
+    # CET uses cashflows up to contemplation month only (asset received at c)
+    cet_cashflows = npv_cashflows[:c]
+    cet = compute_cet(cet_cashflows)
+
     return SimulationResult(
         contemplation_month=c,
         total_paid=total_paid,
@@ -73,7 +82,7 @@ def simulate(
         investment_final_value=investment_value,
         net_cost=net_cost,
         opportunity_cost=opportunity_cost,
-        npv=0.0,  # Computed in metrics module (Task 7/8)
-        cet=0.0,  # Computed in metrics module (Task 7/8)
+        npv=npv,
+        cet=cet,
         monthly_cashflows=cashflows,
     )
