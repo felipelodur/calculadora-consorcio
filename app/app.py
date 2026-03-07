@@ -87,31 +87,18 @@ st.subheader(f"Métricas — Contemplação no mês {contemplation_month} ({cont
 
 scale = num_cotas
 
-col1, col2, col3, col4, col5, col6 = st.columns(6)
-col1.metric("Total Pago", f"R$ {selected.total_paid * scale:,.0f}")
-col2.metric("Valor Consórcio", f"R$ {selected.consorcio_final_value * scale:,.0f}")
-col3.metric("Valor Investimento", f"R$ {selected.investment_final_value * scale:,.0f}")
-
-opp_cost = selected.opportunity_cost * scale
-col4.metric(
-    "Custo de Oportunidade",
-    f"R$ {abs(opp_cost):,.0f}",
-    delta=f"{'Consórcio vence' if opp_cost <= 0 else 'Investimento vence'}",
-    delta_color="normal" if opp_cost > 0 else "inverse",
-)
-
-pct = (selected.consorcio_final_value - selected.investment_final_value) / selected.investment_final_value * 100 if selected.investment_final_value else 0
-col5.metric(
-    "Retorno vs Investimento",
-    f"{pct:+.1f}%",
-    delta=f"{'a mais' if pct >= 0 else 'a menos'} no consórcio",
-    delta_color="inverse" if pct >= 0 else "normal",
-)
-
 be = sweep.break_even_month
-col6.metric(
-    "Break-Even",
-    f"Mês {be} ({be / 12:.1f} anos)" if be else "N/A",
+opp_cost = selected.opportunity_cost * scale
+pct = (selected.consorcio_final_value - selected.investment_final_value) / selected.investment_final_value * 100 if selected.investment_final_value else 0
+
+col1, col2, col3 = st.columns(3)
+col1.metric("Valor Consórcio", f"R$ {selected.consorcio_final_value * scale:,.0f}")
+col2.metric("Valor Investimento", f"R$ {selected.investment_final_value * scale:,.0f}")
+col3.metric(
+    "Consórcio vs Investimento",
+    f"{pct:+.1f}%",
+    delta=f"Break-even: mês {be} ({be / 12:.1f} anos)" if be else "Sem break-even",
+    delta_color="off",
 )
 
 # ── Sweep chart ──────────────────────────────────────────────────────────────
