@@ -107,14 +107,17 @@ def api_simulate():
 
     # Distribution data
     pct_diffs = []
+    abs_diffs = []
     for r in sweep.results:
         if r.investment_final_value != 0:
             pct_d = (r.consorcio_final_value - r.investment_final_value) / r.investment_final_value * 100
         else:
             pct_d = 0.0
         pct_diffs.append(round(pct_d, 2))
+        abs_diffs.append(round((r.consorcio_final_value - r.investment_final_value) * scale, 0))
 
     pct_arr = np.array(pct_diffs)
+    abs_arr = np.array(abs_diffs)
 
     # Portfolio diversification
     rng = np.random.default_rng(42)
@@ -190,6 +193,11 @@ def api_simulate():
             "p50": round(float(np.percentile(pct_arr, 50)), 2),
             "p75": round(float(np.percentile(pct_arr, 75)), 2),
             "p100": round(float(pct_arr.max()), 2),
+            "p0_abs": round(float(abs_arr.min()), 0),
+            "p25_abs": round(float(np.percentile(abs_arr, 25)), 0),
+            "p50_abs": round(float(np.percentile(abs_arr, 50)), 0),
+            "p75_abs": round(float(np.percentile(abs_arr, 75)), 0),
+            "p100_abs": round(float(abs_arr.max()), 0),
         },
         "portfolio": portfolio_stats,
         "table": table_rows,

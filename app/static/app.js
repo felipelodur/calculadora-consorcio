@@ -192,14 +192,15 @@ function renderDistribution(dist) {
     document.getElementById('dist-summary').innerHTML = `<p class="muted">${summary}</p>`;
 
     const stats = [
-        ['Pior cenário', dist.p0], ['Percentil 25%', dist.p25],
-        ['Mediana (50%)', dist.p50], ['Percentil 75%', dist.p75],
-        ['Melhor cenário', dist.p100],
+        ['Pior cenário', dist.p0, dist.p0_abs], ['Percentil 25%', dist.p25, dist.p25_abs],
+        ['Mediana (50%)', dist.p50, dist.p50_abs], ['Percentil 75%', dist.p75, dist.p75_abs],
+        ['Melhor cenário', dist.p100, dist.p100_abs],
     ];
-    document.getElementById('dist-cards').innerHTML = stats.map(([label, val]) => `
+    document.getElementById('dist-cards').innerHTML = stats.map(([label, val, absVal]) => `
         <div class="metric-card">
             <div class="label">${label}</div>
             <div class="value">${val >= 0 ? '+' : ''}${val.toFixed(2)}%</div>
+            <div class="delta ${absVal >= 0 ? 'positive' : 'negative'}">${fmtDelta(absVal)}</div>
         </div>
     `).join('');
 
