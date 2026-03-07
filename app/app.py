@@ -356,3 +356,58 @@ fig2.update_layout(
 )
 
 st.plotly_chart(fig2, use_container_width=True)
+
+# ── Historical CDI chart ─────────────────────────────────────────────────────
+
+if cdi_benchmark is not None and needs_cdi:
+    st.subheader("CDI Histórico — Taxa Mensal")
+
+    # monthly_rates and monthly_data are available from the fetch above
+    cdi_months_labels = [m["month"] for m in monthly_data[:num_months]]
+    cdi_rates_pct = [r * 100 for r in monthly_rates[:num_months]]
+    cdi_arr = np.array(cdi_rates_pct)
+
+    cdi_avg = float(cdi_arr.mean())
+    cdi_med = float(np.median(cdi_arr))
+    cdi_p25 = float(np.percentile(cdi_arr, 25))
+    cdi_p75 = float(np.percentile(cdi_arr, 75))
+
+    cc1, cc2, cc3, cc4 = st.columns(4)
+    cc1.metric("Média", f"{cdi_avg:.3f}%/mês", delta=f"{(1 + cdi_avg / 100) ** 12 - 1:.2%} a.a.")
+    cc2.metric("Mediana", f"{cdi_med:.3f}%/mês")
+    cc3.metric("P25", f"{cdi_p25:.3f}%/mês")
+    cc4.metric("P75", f"{cdi_p75:.3f}%/mês")
+
+    fig3 = go.Figure()
+
+    fig3.add_trace(go.Scatter(
+        x=cdi_months_labels,
+        y=cdi_rates_pct,
+        name="CDI mensal",
+        line=dict(color="#2563eb", width=1),
+        hovertemplate="%{x}<br>%{y:.3f}%<extra>CDI</extra>",
+    ))
+
+    for val, label, color, dash in [
+        (cdi_avg, "Média", "#f59e0b", "solid"),
+        (cdi_med, "Mediana", "#10b981", "solid"),
+        (cdi_p25, "P25", "#9ca3af", "dot"),
+        (cdi_p75, "P75", "#9ca3af", "dot"),
+    ]:
+        fig3.add_hline(
+            y=val, line_dash=dash, line_color=color, line_width=1,
+            annotation_text=f"{label}: {val:.3f}%",
+            annotation_position="top left",
+            annotation_font_color=color,
+        )
+
+    fig3.update_layout(
+        xaxis_title="Mês",
+        yaxis_title="Taxa Mensal (%)",
+        yaxis_ticksuffix="%",
+        height=400,
+        margin=dict(l=20, r=20, t=20, b=20),
+        showlegend=False,
+    )
+
+    st.plotly_chart(fig3, use_container_width=True)
