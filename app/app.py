@@ -1,3 +1,4 @@
+import numpy as np
 import streamlit as st
 import plotly.graph_objects as go
 import pandas as pd
@@ -199,3 +200,76 @@ st.dataframe(
     use_container_width=True,
     hide_index=True,
 )
+
+# ── Distribution overview chart ──────────────────────────────────────────────
+
+st.subheader("Distribuição de Retorno por Mês de Contemplação")
+
+# Compute % difference for every contemplation month
+pct_diffs = []
+abs_diffs = []
+for r in sweep.results:
+    if r.investment_final_value != 0:
+        pct_d = (r.consorcio_final_value - r.investment_final_value) / r.investment_final_value * 100
+    else:
+        pct_d = 0.0
+    pct_diffs.append(pct_d)
+    abs_diffs.append((r.consorcio_final_value - r.investment_final_value) * scale)
+
+pct_arr = np.array(pct_diffs)
+abs_arr = np.array(abs_diffs)
+
+p25 = float(np.percentile(pct_arr, 25))
+p50 = float(np.percentile(pct_arr, 50))
+p75 = float(np.percentile(pct_arr, 75))
+p25_abs = float(np.percentile(abs_arr, 25))
+p50_abs = float(np.percentile(abs_arr, 50))
+p75_abs = float(np.percentile(abs_arr, 75))
+
+# Summary metrics
+st.markdown(
+    f"Assumindo probabilidade igual de contemplação em qualquer mês "
+    f"(**{num_months} meses**, **{num_cotas} cotas**):"
+)
+
+sc1, sc2, sc3 = st.columns(3)
+sc1.metric("Percentil 25%", f"{p25:+.1f}%", delta=f"R$ {p25_abs:+,.0f}")
+sc2.metric("Mediana (50%)", f"{p50:+.1f}%", delta=f"R$ {p50_abs:+,.0f}")
+sc3.metric("Percentil 75%", f"{p75:+.1f}%", delta=f"R$ {p75_abs:+,.0f}")
+
+# Bar chart: % return across all months, colored by positive/negative
+colors = ["#2563eb" if p >= 0 else "#dc2626" for p in pct_diffs]
+
+fig2 = go.Figure()
+
+fig2.add_trace(go.Bar(
+    x=months,
+    y=pct_diffs,
+    marker_color=colors,
+    hovertemplate=(
+        "Mês %{x}<br>"
+        "Retorno: %{y:+.1f}%<br>"
+        "<extra></extra>"
+    ),
+))
+
+# Percentile lines
+for pval, label, dash in [(p25, "P25", "dot"), (p50, "Mediana", "solid"), (p75, "P75", "dot")]:
+    fig2.add_hline(
+        y=pval, line_dash=dash, line_color="#9ca3af", line_width=1,
+        annotation_text=f"{label}: {pval:+.1f}%",
+        annotation_position="top left",
+    )
+
+fig2.add_hline(y=0, line_color="white", line_width=1)
+
+fig2.update_layout(
+    xaxis_title="Mês de Contemplação",
+    yaxis_title="Retorno Consórcio vs Investimento (%)",
+    yaxis_ticksuffix="%",
+    height=400,
+    margin=dict(l=20, r=20, t=20, b=20),
+    showlegend=False,
+)
+
+st.plotly_chart(fig2, use_container_width=True)
