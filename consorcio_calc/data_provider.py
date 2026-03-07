@@ -52,16 +52,40 @@ class BCBDataProvider:
                 data.append({"date": row["date"], "value": float(row["value"])})
         return data
 
-    def fetch(self, series: BCBSeries, start_date: str, end_date: str) -> list[dict]:
-        """Fetch series data from BCB API. Dates in dd/mm/yyyy format."""
+    def _fetch_chunk(self, series: BCBSeries, start_date: str, end_date: str) -> list[dict]:
+        """Fetch a single chunk from BCB API."""
         url = self.BASE_URL.format(code=series.code)
         params = {"formato": "json", "dataInicial": start_date, "dataFinal": end_date}
-        resp = requests.get(url, params=params)
+        resp = requests.get(url, params=params, headers={"Accept": "application/json"})
         resp.raise_for_status()
         raw = resp.json()
-        data = [{"date": item["data"], "value": float(item["valor"])} for item in raw]
-        self._save_cache(series, data)
-        return data
+        return [{"date": item["data"], "value": float(item["valor"])} for item in raw]
+
+    def fetch(self, series: BCBSeries, start_date: str, end_date: str) -> list[dict]:
+        """Fetch series data from BCB API. Dates in dd/mm/yyyy format.
+
+        Automatically splits into 8-year chunks for large date ranges.
+        """
+        from datetime import datetime, timedelta
+
+        start = datetime.strptime(start_date, "%d/%m/%Y")
+        end = datetime.strptime(end_date, "%d/%m/%Y")
+        chunk_days = 8 * 365  # ~8 years per chunk to stay under API limit
+
+        all_data: list[dict] = []
+        chunk_start = start
+        while chunk_start < end:
+            chunk_end = min(chunk_start + timedelta(days=chunk_days), end)
+            chunk = self._fetch_chunk(
+                series,
+                chunk_start.strftime("%d/%m/%Y"),
+                chunk_end.strftime("%d/%m/%Y"),
+            )
+            all_data.extend(chunk)
+            chunk_start = chunk_end + timedelta(days=1)
+
+        self._save_cache(series, all_data)
+        return all_data
 
     def get(self, series: BCBSeries, start_date: str, end_date: str) -> list[dict]:
         """Get series data, using cache if valid, otherwise fetching."""

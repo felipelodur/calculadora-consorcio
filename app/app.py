@@ -3,12 +3,16 @@ import streamlit as st
 import plotly.graph_objects as go
 import pandas as pd
 
+from datetime import datetime, timedelta
+
 from consorcio_calc import (
     ConsorcioParams,
     FixedRateBenchmark,
+    HistoricalBenchmark,
     simulate,
     run_sweep,
 )
+from consorcio_calc.data_provider import BCBDataProvider, BCBSeries
 
 st.set_page_config(
     page_title="Calculadora de Consórcio",
@@ -45,9 +49,21 @@ rendimento_fundo = st.sidebar.number_input(
 ) / 100
 
 st.sidebar.header("Benchmark de Investimento")
-taxa_anual = st.sidebar.number_input(
-    "Taxa anual do benchmark (%)", value=13.25, step=0.25, format="%.2f"
-) / 100
+benchmark_mode = st.sidebar.radio(
+    "Modo", ["Taxa Fixa", "CDI Histórico"], horizontal=True
+)
+
+if benchmark_mode == "Taxa Fixa":
+    taxa_anual = st.sidebar.number_input(
+        "Taxa anual do benchmark (%)", value=13.25, step=0.25, format="%.2f"
+    ) / 100
+else:
+    start_date = st.sidebar.date_input(
+        "Data de início do consórcio",
+        value=datetime(2006, 1, 1),
+        min_value=datetime(2000, 1, 1),
+        max_value=datetime.now(),
+    )
 
 st.sidebar.header("Cenário Específico")
 contemplation_month = st.sidebar.slider(
@@ -65,7 +81,41 @@ params = ConsorcioParams(
     reajuste_anual=correcao_anual if correcao_anual > 0 else None,
 )
 
-benchmark = FixedRateBenchmark(annual_rate=taxa_anual)
+if benchmark_mode == "Taxa Fixa":
+    benchmark = FixedRateBenchmark(annual_rate=taxa_anual)
+else:
+    # Fetch historical CDI data from BCB
+    provider = BCBDataProvider()
+    start_str = start_date.strftime("%d/%m/%Y")
+    end_dt = start_date + timedelta(days=num_months * 31)
+    end_str = end_dt.strftime("%d/%m/%Y")
+
+    try:
+        with st.spinner("Buscando dados históricos do CDI no Banco Central..."):
+            raw_data = provider.fetch(BCBSeries.CDI, start_str, end_str)
+            monthly_data = provider.aggregate_to_monthly(raw_data)
+            monthly_rates = [m["value"] for m in monthly_data]
+
+        if len(monthly_rates) < num_months:
+            st.warning(
+                f"Dados históricos insuficientes: encontrados {len(monthly_rates)} meses, "
+                f"necessários {num_months}. Usando os {len(monthly_rates)} meses disponíveis "
+                f"e taxa fixa para o restante."
+            )
+            # Fill remaining months with the average of available data
+            avg_rate = sum(monthly_rates) / len(monthly_rates) if monthly_rates else 0
+            monthly_rates.extend([avg_rate] * (num_months - len(monthly_rates)))
+
+        benchmark = HistoricalBenchmark(monthly_rates=monthly_rates[:num_months])
+
+        # Show actual annualized CDI rate
+        avg_monthly = sum(monthly_rates[:num_months]) / len(monthly_rates[:num_months])
+        annual_equiv = (1 + avg_monthly) ** 12 - 1
+        st.info(f"CDI histórico: taxa média mensal {avg_monthly * 100:.3f}% → {annual_equiv * 100:.2f}% a.a.")
+
+    except Exception as e:
+        st.error(f"Erro ao buscar dados do BCB: {e}. Usando taxa fixa de 13.25% como fallback.")
+        benchmark = FixedRateBenchmark(annual_rate=0.1325)
 
 sweep = run_sweep(params, benchmark)
 selected = simulate(params, contemplation_month=contemplation_month, benchmark=benchmark)
