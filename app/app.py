@@ -173,11 +173,11 @@ col3.metric(
 
 col4, col5, col6 = st.columns(3)
 col4.metric("Total Pago", f"R$ {selected.total_paid * scale:,.0f}")
+diff_value = -opp_cost  # positive = consórcio ahead
 col5.metric(
     "Diferença Absoluta",
     f"R$ {abs(opp_cost):,.0f}",
-    delta=f"{'a favor do consórcio' if opp_cost <= 0 else 'a favor do investimento'}",
-    delta_color="inverse" if opp_cost <= 0 else "normal",
+    delta=f"{'+' if diff_value >= 0 else '-'}R$ {abs(diff_value):,.0f} {'consórcio' if diff_value >= 0 else 'investimento'}",
 )
 col6.metric(
     "Break-Even",
@@ -318,12 +318,18 @@ p100 = float(pct_arr.max())
 p0_abs = float(abs_arr.min())
 p100_abs = float(abs_arr.max())
 
+def _fmt_delta(value: float) -> str:
+    """Format R$ delta with sign before R$ so Streamlit parses color correctly."""
+    if value >= 0:
+        return f"+R$ {value:,.0f}"
+    return f"-R$ {abs(value):,.0f}"
+
 sc1, sc2, sc3, sc4, sc5 = st.columns(5)
-sc1.metric("Pior cenário", f"{p0:+.1f}%", delta=f"R$ {p0_abs:+,.0f}")
-sc2.metric("Percentil 25%", f"{p25:+.1f}%", delta=f"R$ {p25_abs:+,.0f}")
-sc3.metric("Mediana (50%)", f"{p50:+.1f}%", delta=f"R$ {p50_abs:+,.0f}")
-sc4.metric("Percentil 75%", f"{p75:+.1f}%", delta=f"R$ {p75_abs:+,.0f}")
-sc5.metric("Melhor cenário", f"{p100:+.1f}%", delta=f"R$ {p100_abs:+,.0f}")
+sc1.metric("Pior cenário", f"{p0:+.1f}%", delta=_fmt_delta(p0_abs))
+sc2.metric("Percentil 25%", f"{p25:+.1f}%", delta=_fmt_delta(p25_abs))
+sc3.metric("Mediana (50%)", f"{p50:+.1f}%", delta=_fmt_delta(p50_abs))
+sc4.metric("Percentil 75%", f"{p75:+.1f}%", delta=_fmt_delta(p75_abs))
+sc5.metric("Melhor cenário", f"{p100:+.1f}%", delta=_fmt_delta(p100_abs))
 
 # Bar chart: % return across all months, colored by positive/negative
 colors = ["#2563eb" if p >= 0 else "#dc2626" for p in pct_diffs]
