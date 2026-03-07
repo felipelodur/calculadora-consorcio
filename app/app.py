@@ -80,10 +80,6 @@ if needs_cdi:
         max_value=datetime.now(),
     )
 
-st.sidebar.header("Cenário Específico")
-contemplation_month = st.sidebar.slider(
-    "Mês de contemplação", min_value=1, max_value=num_months, value=60
-)
 
 # ── Build params & run simulation ────────────────────────────────────────────
 
@@ -149,39 +145,41 @@ elif fund_mode == "Taxa Fixa":
 # "Mesmo do investimento" → None → simulator uses benchmark for both
 
 sweep = run_sweep(params, benchmark, fund_benchmark=fund_benchmark)
-selected = simulate(params, contemplation_month=contemplation_month, benchmark=benchmark, fund_benchmark=fund_benchmark)
 
-# ── Metrics cards ────────────────────────────────────────────────────────────
+# ── Scenario slider + Metrics ────────────────────────────────────────────────
+
+contemplation_month = st.slider(
+    "Mês de contemplação", min_value=1, max_value=num_months, value=60
+)
+selected = simulate(params, contemplation_month=contemplation_month, benchmark=benchmark, fund_benchmark=fund_benchmark)
 
 st.subheader(f"Métricas — Contemplação no mês {contemplation_month} ({contemplation_month / 12:.1f} anos)")
 
 scale = num_cotas
 
 be = sweep.break_even_month
-opp_cost = selected.opportunity_cost * scale
-pct = (selected.consorcio_final_value - selected.investment_final_value) / selected.investment_final_value * 100 if selected.investment_final_value else 0
+cons_val = selected.consorcio_final_value * scale
+inv_val = selected.investment_final_value * scale
+diff_abs = cons_val - inv_val
+pct = diff_abs / inv_val * 100 if inv_val else 0
 
 col1, col2, col3 = st.columns(3)
-col1.metric("Valor Consórcio", f"R$ {selected.consorcio_final_value * scale:,.0f}")
-col2.metric("Valor Investimento", f"R$ {selected.investment_final_value * scale:,.0f}")
+col1.metric(
+    "Valor Consórcio",
+    f"R$ {cons_val:,.0f}",
+    delta=f"+R$ {diff_abs:,.0f}" if diff_abs >= 0 else f"-R$ {abs(diff_abs):,.0f}",
+)
+col2.metric(
+    "Valor Investimento",
+    f"R$ {inv_val:,.0f}",
+    delta=f"Total pago: R$ {selected.total_paid * scale:,.0f}",
+    delta_color="off",
+)
 col3.metric(
     "Consórcio vs Investimento",
     f"{pct:+.1f}%",
     delta=f"Break-even: mês {be} ({be / 12:.1f} anos)" if be else "Sem break-even",
     delta_color="off",
-)
-
-col4, col5, col6 = st.columns(3)
-col4.metric("Total Pago", f"R$ {selected.total_paid * scale:,.0f}")
-diff_value = -opp_cost  # positive = consórcio ahead
-col5.metric(
-    "Diferença Absoluta",
-    f"R$ {abs(opp_cost):,.0f}",
-    delta=f"{'+' if diff_value >= 0 else '-'}R$ {abs(diff_value):,.0f} {'consórcio' if diff_value >= 0 else 'investimento'}",
-)
-col6.metric(
-    "Break-Even",
-    f"Mês {be} ({be / 12:.1f} anos)" if be else "N/A",
 )
 
 # ── Sweep chart ──────────────────────────────────────────────────────────────

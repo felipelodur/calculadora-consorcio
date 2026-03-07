@@ -6,3 +6,4 @@ dist/
 build/
 data/cache/*.csv
 .pytest_cache/
+*.pdf
