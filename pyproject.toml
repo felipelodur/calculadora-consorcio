@@ -1,0 +1,22 @@
+[project]
+name = "consorcio-calc"
+version = "0.1.0"
+description = "Backtestable Brazilian consorcio financial calculator"
+requires-python = ">=3.11"
+dependencies = [
+    "requests>=2.31",
+    "scipy>=1.11",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4",
+    "pytest-cov>=4.1",
+]
+
+[tool.setuptools.packages.find]
+include = ["consorcio_calc*"]
+
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
