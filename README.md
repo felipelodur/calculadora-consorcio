@@ -2,8 +2,6 @@
 
 Compare a Brazilian consórcio proposal against investing the same money independently. Supports fixed-rate and historical CDI backtesting, scenario sweep across all contemplation months, and key financial metrics (NPV, CET, break-even, opportunity cost).
 
-**Live app:** [calculadora-consorcio.streamlit.app](https://calculadora-consorcio.streamlit.app) (if deployed)
-
 ## Project Structure
 
 ```
@@ -17,7 +15,11 @@ consorcio_calc/          # Pure Python engine (no UI dependencies)
   backtest.py            # Historical backtest harness connecting BCB data to simulator
 
 app/
-  app.py                 # Streamlit single-page web app (Portuguese BR)
+  flask_app.py           # Flask backend API
+  templates/index.html   # Single-page HTML shell
+  static/app.js          # Frontend logic and Plotly charts
+  static/style.css       # Styles
+  app.py                 # Legacy Streamlit app (kept for reference)
 
 tests/                   # pytest suite (40+ tests)
 ```
@@ -39,7 +41,12 @@ pytest -v
 ## Run the App
 
 ```bash
-streamlit run app/app.py
+# Flask app (default)
+pip install -r requirements-flask.txt
+python -m flask --app app.flask_app run --debug
+
+# Or with gunicorn (production)
+gunicorn app.flask_app:app --bind 0.0.0.0:8000
 ```
 
 ## Key Concepts
@@ -52,9 +59,6 @@ streamlit run app/app.py
 - **Benchmark**: the alternative investment return (fixed rate or historical CDI)
 - **Sweep**: simulates every possible contemplation month to find break-even and distribution
 
-## Deploy on Streamlit Cloud
+## Deploy on Render
 
-1. Push to GitHub
-2. Go to [share.streamlit.io](https://share.streamlit.io)
-3. Point to `app/app.py` as the main file
-4. `requirements.txt` in the repo root handles dependencies
+The app is configured for Render deployment via `render.yaml`. Push to the main branch and Render will auto-deploy.
