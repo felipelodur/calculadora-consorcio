@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Consórcio</title>
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="layout">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <h2>Calculadora de Consórcio</h2>
+            <p class="subtitle">Compare consórcio vs. investimento direto</p>
+
+            <section>
+                <h3>Dados do Consórcio</h3>
+                <label>Carta de crédito por cota (R$)
+                    <input type="number" id="carta_credito" value="200000" step="10000">
+                </label>
+                <label>Número de cotas
+                    <input type="number" id="num_cotas" value="10" min="1" step="1">
+                </label>
+                <label>Prazo (meses)
+                    <input type="number" id="num_months" value="238" min="12" step="1">
+                </label>
+                <label>Meia parcela por cota (R$)
+                    <input type="number" id="meia_parcela" value="512.60" step="10">
+                </label>
+                <label>Parcela cheia por cota (R$)
+                    <input type="number" id="parcela_cheia" value="1025.20" step="10">
+                </label>
+            </section>
+
+            <section>
+                <h3>Taxas</h3>
+                <label>Correção anual (%)
+                    <input type="number" id="correcao_anual" value="5.0" step="0.5">
+                </label>
+                <label>Rendimento do fundo (% do CDI)
+                    <input type="number" id="rendimento_fundo" value="96" step="1">
+                </label>
+            </section>
+
+            <section>
+                <h3>Benchmark de Investimento</h3>
+                <div class="radio-group">
+                    <label><input type="radio" name="invest_mode" value="fixed" checked> Taxa Fixa</label>
+                    <label><input type="radio" name="invest_mode" value="cdi"> CDI Histórico</label>
+                </div>
+                <label id="taxa_anual_wrap">Taxa anual do investimento (%)
+                    <input type="number" id="taxa_anual" value="13.25" step="0.25">
+                </label>
+            </section>
+
+            <section>
+                <h3>Rendimento do Fundo</h3>
+                <div class="radio-group">
+                    <label><input type="radio" name="fund_mode" value="same" checked> Mesmo do investimento</label>
+                    <label><input type="radio" name="fund_mode" value="cdi"> CDI Histórico</label>
+                    <label><input type="radio" name="fund_mode" value="fixed"> Taxa Fixa</label>
+                </div>
+                <label id="fund_taxa_wrap" class="hidden">Taxa anual do fundo (%)
+                    <input type="number" id="fund_taxa" value="13.25" step="0.25">
+                </label>
+            </section>
+
+            <section id="cdi_section" class="hidden">
+                <h3>Dados Históricos CDI</h3>
+                <label>Data de início
+                    <input type="date" id="cdi_start" value="2006-01-01">
+                </label>
+            </section>
+
+            <button id="btn-simulate" onclick="runSimulation()">Simular</button>
+        </aside>
+
+        <!-- Main content -->
+        <main class="content">
+            <div id="loading" class="hidden">
+                <div class="spinner"></div>
+                <span>Calculando...</span>
+            </div>
+
+            <div id="results" class="hidden">
+                <!-- Slider -->
+                <div class="slider-section">
+                    <label>Mês de contemplação: <strong id="slider-label">60</strong></label>
+                    <input type="range" id="contemplation_month" min="1" max="238" value="60" oninput="onSliderChange(this.value)">
+                </div>
+
+                <!-- Metrics -->
+                <h2 id="metrics-title"></h2>
+                <div class="metrics-row" id="metrics-cards"></div>
+
+                <!-- CDI info banner -->
+                <div id="cdi-info" class="info-banner hidden"></div>
+
+                <!-- Sweep chart -->
+                <h2>Análise de Cenários por Mês de Contemplação</h2>
+                <div id="chart-sweep"></div>
+
+                <!-- Table -->
+                <h2>Tabela Comparativa</h2>
+                <div id="comparison-table"></div>
+
+                <!-- Distribution -->
+                <h2>Distribuição de Retorno por Mês de Contemplação</h2>
+                <div id="dist-summary"></div>
+                <div id="dist-cards" class="metrics-row"></div>
+                <div id="chart-distribution"></div>
+
+                <!-- Portfolio diversification -->
+                <h2>Efeito de Diversificação por Número de Cotas</h2>
+                <p class="muted">Com múltiplas cotas contempladas em meses aleatórios, o resultado do portfólio converge para a média (menor risco).</p>
+                <div id="chart-portfolio"></div>
+
+                <!-- CDI Historical -->
+                <div id="cdi-historical-section" class="hidden">
+                    <h2>CDI Histórico — Taxa Anualizada</h2>
+                    <div id="cdi-hist-cards" class="metrics-row"></div>
+                    <div id="chart-cdi"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>
