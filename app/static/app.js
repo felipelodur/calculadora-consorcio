@@ -76,8 +76,8 @@ async function runSimulation() {
         const data = await resp.json();
         lastResponse = data;
 
-        renderAll(data, inputs.contemplation_month);
         document.getElementById('results').classList.remove('hidden');
+        renderAll(data, inputs.contemplation_month);
     } catch (e) {
         alert('Erro na simulação: ' + e.message);
     } finally {
