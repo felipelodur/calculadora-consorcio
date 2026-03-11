@@ -86,6 +86,9 @@ def api_simulate():
         fund_benchmark = cdi_benchmark
     elif data["fund_mode"] == "fixed":
         fund_benchmark = FixedRateBenchmark(annual_rate=data["fund_taxa"] / 100)
+        # When user sets a fixed fund rate, it's the effective rate —
+        # override rendimento_fundo so the simulator doesn't scale it again.
+        params.rendimento_fundo = 1.0
 
     # Run sweep and selected simulation
     sweep = run_sweep(params, benchmark, fund_benchmark=fund_benchmark)
