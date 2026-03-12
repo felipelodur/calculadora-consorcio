@@ -82,7 +82,10 @@ def api_simulate():
         benchmark = cdi_benchmark
 
     fund_benchmark = None
-    if data["fund_mode"] == "cdi":
+    if data["fund_mode"] == "pct_cdi":
+        # User specifies a CDI rate + % of CDI for the fund
+        fund_benchmark = FixedRateBenchmark(annual_rate=data["fund_cdi_rate"] / 100)
+    elif data["fund_mode"] == "cdi":
         fund_benchmark = cdi_benchmark
     elif data["fund_mode"] == "fixed":
         fund_benchmark = FixedRateBenchmark(annual_rate=data["fund_taxa"] / 100)

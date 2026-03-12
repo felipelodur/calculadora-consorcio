@@ -10,6 +10,8 @@ function toggleFields() {
     const needsCdi = investMode === 'cdi' || fundMode === 'cdi';
 
     document.getElementById('taxa_anual_wrap').classList.toggle('hidden', investMode !== 'fixed');
+    document.getElementById('fund_cdi_rate_wrap').classList.toggle('hidden', fundMode !== 'pct_cdi');
+    document.getElementById('rendimento_fundo_wrap').classList.toggle('hidden', fundMode !== 'pct_cdi' && fundMode !== 'cdi');
     document.getElementById('fund_taxa_wrap').classList.toggle('hidden', fundMode !== 'fixed');
     document.getElementById('cdi_section').classList.toggle('hidden', !needsCdi);
 }
@@ -27,6 +29,7 @@ function getInputs() {
         fund_mode: document.querySelector('input[name="fund_mode"]:checked').value,
         taxa_anual: +document.getElementById('taxa_anual').value,
         fund_taxa: +document.getElementById('fund_taxa').value,
+        fund_cdi_rate: +document.getElementById('fund_cdi_rate').value,
         cdi_start: document.getElementById('cdi_start').value,
         contemplation_month: +document.getElementById('contemplation_month').value,
     };
